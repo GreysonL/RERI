@@ -1,7 +1,7 @@
 # RERI
 UML, CML and EB estimators of Relative Excess Risk due to Interaction.
 
-We provide self-defined R functions with respect to those three estimators in binary cases (when the data structure is 2*2*2 contingency table and genneral cases.
+We provide self-defined R functions with respect to those three estimators in binary cases (when the data structure is 2 by 2 by 2 contingency table and genneral cases.
 
 In binary cases, functions add.uml(), add.cml(), add.eb() require inputs of eight numbers of each cell in the order of (# D=0,G=0,E=0), (# D=0,G=0,E=1),(# D=0,G=1,E=0), (# D=0,G=1,E=1),(# D=1,G=0,E=0),(# D=1,G=0,E=1), (#D=1,G=1,E=0), (# D=1,G=1,E=1). The functions will returen the estimated RERI ($RERI) and corresponding standard deviation($sd). Additionally in add.eb(), you can call add.eb()$pr to see the data-adaptive weight of the UML estimator within the EB estimator. Functions add.wald.uml(), add.wald.cml(), add.wald.eb() require the same input as add.uml(), and they return the value of test statistic($stat) and P value ($pvalue).
 
