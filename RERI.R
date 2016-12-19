@@ -1,135 +1,95 @@
 library(CGEN)
-add.uml=function(r01,r02,r03,r04,r11,r12,r13,r14){
-  reri=r01*r14/(r11*r04)-r01*r13/(r11*r03)-r01*r12/(r11*r02)+1
-  A=r14/r04-r13/r03-r12/r02
-  var=(r01/r11)^2*((1/r01+1/r11)*A^2+r12^2/r02^3+r13^2/r03^3+r14^2/r04^3+r12/r02^2+r13/r03^2+r14/r04^2)
-  sd=sqrt(var)
-  a=list(reri,sd)
-  names(a)=c("reri","sd")
-  return(a)
-}
-add.cml=function(r01,r02,r03,r04,r11,r12,r13,r14){
-  reri=r14/r11*(r01+r03)/(r02+r04)*(r01+r02)/(r03+r04)-r13*(r01+r02)/(r11*(r03+r04))-r12*(r01+r03)/(r11*(r02+r04))+1
-  N0=r01+r02+r03+r04
-  rg=r03+r04
-  re=r02+r04
-  B=r01*r04-r02*r03
-  C=(r13-r14*(N0-re)/re)/rg^2
-  D=(r12-r14*(N0-rg)/rg)/re^2
-  E=r12*(N0-re)/re+r13*(N0-rg)/rg-r14*(N0-rg)/rg*(N0-re)/re
-  var=N0/r11^2*(2*B*C*D+rg*(N0-rg)*C^2+re*(N0-re)*D^2)+(E^2/r11+r12*((N0-re)/re)^2+r13*((N0-rg)/rg)^2+r14*((N0-re)/re*(N0-rg)/rg)^2)/r11^2
-  sd=sqrt(var)
-  a=list(reri,sd)
-  names(a)=c("reri","sd")
-  return(a)
-}
-add.eb=function(r01,r02,r03,r04,r11,r12,r13,r14){
-  N0=r01+r02+r03+r04
-  rg=r03+r04
-  re=r02+r04
-  A=r14/r04-r13/r03-r12/r02
-  E=r12*(N0-re)/re+r13*(N0-rg)/rg-r14*(N0-rg)/rg*(N0-re)/re
-  H=r14*(2*N0-rg-re)/(rg*re)-r13/rg-r12/re
-  I=r12*(N0-re)/re^2-r13/rg+r14*(N0-re)/re^2*(r04-r01)/rg
-  J=r13*(N0-rg)/rg^2-r12/re+r14*(N0-rg)/rg^2*(r04-r01)/re
-  K=r12*(N0-re)/re^2+r13*(N0-rg)/rg^2-r14*(N0-rg)/rg^2*(N0-re)/re-r14*(N0-rg)/re^2*(N0-re)/rg
-  cov=r01/r11^2*(A*H+r12/r02*I+r13/r03*J-r14/r04*K-A*E/r11+r12/r02*(N0-re)/re+r13/r03*(N0-rg)/rg+r14/r04*(N0-re)/re*(N0-rg)/rg)
-  reriuml=add.uml(r01,r02,r03,r04,r11,r12,r13,r14)$reri
-  rericml=add.cml(r01,r02,r03,r04,r11,r12,r13,r14)$reri
-  varuml=(add.uml(r01,r02,r03,r04,r11,r12,r13,r14)$sd)^2
-  varcml=(add.cml(r01,r02,r03,r04,r11,r12,r13,r14)$sd)^2
-  diff=(reriuml-rericml)^2
-  reri=varuml/(varuml+diff)*rericml+diff/(varuml+diff)*reriuml
-  f1=reriuml
-  f2=rericml
-  b1=(3*f1^2-4*f1*f2+f2^2)/(varuml+(f1-f2)^2)-(2*varuml*f2*(f1-f2)+2*f1*(f1-f2)^3)/(varuml+(f1-f2)^2)^2
-  b2=(varuml^2-varuml*(f1-f2)^2)/(varuml+(f1-f2)^2)^2
-  var=b1^2*varuml+2*b1*b2*cov+b2^2*varcml
-  pr=varuml/(varuml+diff)
-  sd=sqrt(var)
-  a=list(pr,reri,sd)
-  names(a)=c("pr","reri","sd")
-  return(a)
-}
-add.wald.uml=function(r01,r02,r03,r04,r11,r12,r13,r14){
-  temp=add.uml(r01,r02,r03,r04,r11,r12,r13,r14)
-  stat=temp$reri/temp$sd
-  pvalue=2*(1-pnorm(abs(stat)))
-  a=list(stat,pvalue)
-  names(a)=c("stat","pvalue")
-  return(a)
-}
-add.wald.cml=function(r01,r02,r03,r04,r11,r12,r13,r14){
-  temp=add.cml(r01,r02,r03,r04,r11,r12,r13,r14)
-  stat=temp$reri/temp$sd
-  pvalue=2*(1-pnorm(abs(stat)))
-  a=list(stat,pvalue)
-  names(a)=c("stat","pvalue")
-  return(a)
-}
-add.wald.eb=function(r01,r02,r03,r04,r11,r12,r13,r14){
-  temp=add.eb(r01,r02,r03,r04,r11,r12,r13,r14)
-  stat=temp$reri/temp$sd
-  pvalue=2*(1-pnorm(abs(stat)))
-  a=list(stat,pvalue)
-  names(a)=c("stat","pvalue")
-  return(a)
-}
-RERI.test=function(G0,G1,E0,E1,z,data,response.var,snp.var,main.vars=NULL,int.vars=NULL,strata.var=NULL){
-  fit=snp.logistic(data,response.var,snp.var,main.vars,int.vars,strata.var)
-  index1=match(c(snp.var,int.vars,paste0(snp.var,":",int.vars)),names(fit$UML$parms))
-  beta_uml=fit$UML$parms[c(1,index1,seq(1:length(fit$UML$parms))[-c(1,index1)])]
-  beta_cml=fit$CML$parms[c(1,index1,seq(1:length(fit$UML$parms))[-c(1,index1)])]
-  beta_eb=fit$EB$parms[c(1,index1,seq(1:length(fit$UML$parms))[-c(1,index1)])]
-  znames=main.vars[-match(int.vars,main.vars)]
-  Zdata=data[,match(znames,colnames(data))]
-  newz=z
-  a=1
-  for(j in 1:ncol(Zdata)){
-    if(is.factor(Zdata[,j])==T){
-      newz=newz[-a]
-      k=length(unique(Zdata[,j]))-1
-      temp=rep(0,k)
-      temp[z[j]]=1
-      newz=c(newz,temp)
+RERI.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.vars=NULL,strata.var=NULL){
+  elevel=c()
+  for(i in 1:length(int.vars)){
+    if(is.factor(data[,int.vars[i]])){
+      elevel=c(elevel,length(unique(data[,int.vars[i]]))-sum(is.na(data[,int.vars[i]])))
     }
-    if(is.factor(Zdata[,j])==F){a=a+1}
+    if(is.factor(data[,int.vars[i]])==F){
+      elevel=c(elevel,1)
+    }
   }
-  reri_uml=exp(beta_uml%*%c(1,G1,E1,G1*E1,newz))-exp(beta_uml%*%c(1,G1,E0,G1*E0,newz))-exp(beta_uml%*%c(1,G0,E1,G0*E1,newz))+exp(beta_uml%*%c(1,G0,E0,G0*E0,newz))
-  reri_cml=exp(beta_cml%*%c(1,G1,E1,G1*E1,newz))-exp(beta_cml%*%c(1,G1,E0,G1*E0,newz))-exp(beta_cml%*%c(1,G0,E1,G0*E1,newz))+exp(beta_cml%*%c(1,G0,E0,G0*E0,newz))
-  deriv_G_uml=exp(beta_uml%*%c(1,G1,E1,G1*E1,newz))*G1-exp(beta_uml%*%c(1,G1,E0,G1*E0,newz))*G1-exp(beta_uml%*%c(1,G0,E1,G0*E1,newz))*G0+exp(beta_uml%*%c(1,G0,E0,G0*E0,newz))*G0
-  deriv_E_uml=exp(beta_uml%*%c(1,G1,E1,G1*E1,newz))*E1-exp(beta_uml%*%c(1,G1,E0,G1*E0,newz))*E0-exp(beta_uml%*%c(1,G0,E1,G0*E1,newz))*E1+exp(beta_uml%*%c(1,G0,E0,G0*E0,newz))*E0
-  deriv_GE_uml=exp(beta_uml%*%c(1,G1,E1,G1*E1,newz))*G1*E1-exp(beta_uml%*%c(1,G1,E0,G1*E0,newz))*G1*E0-exp(beta_uml%*%c(1,G0,E1,G0*E1,newz))*G0*E1+exp(beta_uml%*%c(1,G0,E0,G0*E0,newz))*G0*E0
-  deriv_0_uml=reri_uml
-  deriv_z_uml=reri_uml*newz
-  B1=c(deriv_0_uml,deriv_G_uml,deriv_E_uml,deriv_GE_uml,deriv_z_uml)
-  deriv_G_cml=exp(beta_cml%*%c(1,G1,E1,G1*E1,newz))*G1-exp(beta_cml%*%c(1,G1,E0,G1*E0,newz))*G1-exp(beta_cml%*%c(1,G0,E1,G0*E1,newz))*G0+exp(beta_cml%*%c(1,G0,E0,G0*E0,newz))*G0
-  deriv_E_cml=exp(beta_cml%*%c(1,G1,E1,G1*E1,newz))*E1-exp(beta_cml%*%c(1,G1,E0,G1*E0,newz))*E0-exp(beta_cml%*%c(1,G0,E1,G0*E1,newz))*E1+exp(beta_cml%*%c(1,G0,E0,G0*E0,newz))*E0
-  deriv_GE_cml=exp(beta_cml%*%c(1,G1,E1,G1*E1,newz))*G1*E1-exp(beta_cml%*%c(1,G1,E0,G1*E0,newz))*G1*E0-exp(beta_cml%*%c(1,G0,E1,G0*E1,newz))*G0*E1+exp(beta_cml%*%c(1,G0,E0,G0*E0,newz))*G0*E0
-  deriv_0_cml=reri_cml
-  deriv_z_cml=reri_cml*newz
-  B0=c(deriv_0_cml,deriv_G_cml,deriv_E_cml,deriv_GE_cml,deriv_z_cml)
-  index3=c(1,index1,seq(1:length(fit$UML$parms))[-c(1,index1)])
-  V1=fit$UML$cov[index3,index3]
-  V0=fit$CML$cov[index3,index3]
-  var1=t(B1)%*%V1%*%B1
-  var0=t(B0)%*%V0%*%B0
-  reri_eb=(reri_uml-reri_cml)^2/((reri_uml-reri_cml)^2+var1)*reri_uml+var1/((reri_uml-reri_cml)^2+var1)*reri_cml
-  R1=reri_uml;R0=reri_cml
-  deriv_uml=(3*R1^2-4*R0*R1+R0^2)/(var1+(R1-R0)^2)-(2*var1*R0*(R1-R0)+2*R1*(R1-R0)^3)/(var1+(R1-R0)^2)^2
-  deriv_cml=(var1^2-var1*(R1-R0)^2)/(var1+(R1-R0)^2)^2
-  A=c(deriv_uml,deriv_cml)
-  sigma=fit$EB$UML.CML.cov[index3,index3]
-  var=t(A)%*%matrix(c(var1,t(B1)%*%sigma%*%B0,t(B1)%*%sigma%*%B0,var0),nrow=2,ncol=2)%*%A
-  EB=c(reri_eb,reri_eb-1.96*sqrt(var),reri_eb+1.96*sqrt(var),2*(1-pnorm(abs(reri_eb/sqrt(var)))))
-  UML=c(reri_uml,reri_uml-1.96*sqrt(var1),reri_uml+1.96*sqrt(var1),2*(1-pnorm(abs(reri_uml/sqrt(var1)))))
-  CML=c(reri_cml,reri_cml-1.96*sqrt(var0),reri_cml+1.96*sqrt(var0),2*(1-pnorm(abs(reri_cml/sqrt(var0)))))
-  names(EB)=c("stat","lower","upper","p-value")
-  names(UML)=c("stat","lower","upper","p-value")
-  names(CML)=c("stat","lower","upper","p-value")
-  result=list(UML,CML,EB)
-  names(result)=c("UML","CML","EB")
-  result
+  glevel=length(unique(data[,snp.var]))-sum(is.na(data[,snp.var]))
+  main_e_name=c()
+  for(i in 1:length(int.vars)){
+    if(elevel[i]<=2){main_e_name=c(main_e_name,int.vars[i])}
+    if(elevel[i]>2){
+      for(j in 1:(elevel[i]-1)){
+        main_e_name=c(main_e_name,paste0(int.vars[i],"_",j))
+      }
+    }
+  }
+  if(glevel==2){main_g_name=snp.var}
+  if(glevel==3){main_g_name=c(paste0(snp.var,"1"),paste0(snp.var,"2"))}
+  inter_name=c()
+  for(i in 1:length(main_g_name)){
+    for(j in 1:length(main_e_name)){
+      inter_name=c(inter_name,paste0(main_g_name[i],":",main_e_name[j]))
+    }
+  }
+  fit=snp.logistic(data,response.var,snp.var,main.vars,int.vars,strata.var,op=list(genetic.model=3*glevel-6))
+  index=match(c(main_g_name,main_e_name,inter_name),names(fit$UML$parms))
+  beta_uml=fit$UML$parms[index]
+  beta_cml=fit$CML$parms[index]
+  
+  ############################
+  if(is.null(G0)==F & is.null(G1)==F & is.null(E0)==F & is.null(E1)==F){
+    G0_new=rep(0,glevel-1)
+    G0_new[G0]=1
+    G1_new=rep(0,glevel-1)
+    G1_new[G1]=1
+    E0_new=c()
+    E1_new=c()
+    for(i in 1:length(int.vars)){
+      if(elevel[i]<=2){E0_new=c(E0_new,E0[i]);E1_new=c(E1_new,E1[i])}
+      if(elevel[i]>2){
+        temp0=rep(0,elevel[i]-1)
+        temp1=rep(0,elevel[i]-1)
+        temp0[E0[i]]=1
+        temp1[E1[i]]=1
+        E0_new=c(E0_new,temp0)
+        E1_new=c(E1_new,temp1)
+      }
+    }
+    G1_E1=c();G1_E0=c();G0_E1=c();G0_E0=c()
+    for(i in 1:(glevel-1)){
+      G1_E1=c(G1_E1,G1_new[i]*E1_new)
+      G1_E0=c(G1_E0,G1_new[i]*E0_new)
+      G0_E1=c(G0_E1,G0_new[i]*E1_new)
+      G0_E0=c(G0_E0,G0_new[i]*E0_new)
+    }
+    reri_uml=exp(beta_uml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_uml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0))-exp(beta_uml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0))+1
+    reri_cml=exp(beta_cml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_cml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0))-exp(beta_cml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0))+1
+    deriv_G_uml=(exp(beta_uml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_uml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0)))*(G1_new-G0_new)
+    deriv_E_uml=(exp(beta_uml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_uml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0)))*(E1_new-E0_new)
+    deriv_GE_uml=exp(beta_uml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))*(G1_E1-G0_E0)-exp(beta_uml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0))*(G0_E1-G0_E0)-exp(beta_uml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0))*(G1_E0-G0_E0)
+    B1=c(deriv_G_uml,deriv_E_uml,deriv_GE_uml)
+    deriv_G_cml=(exp(beta_cml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_cml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0)))*(G1_new-G0_new)
+    deriv_E_cml=(exp(beta_cml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_cml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0)))*(E1_new-E0_new)
+    deriv_GE_cml=exp(beta_cml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))*(G1_E1-G0_E0)-exp(beta_cml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0))*(G0_E1-G0_E0)-exp(beta_cml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0))*(G1_E0-G0_E0)
+    B0=c(deriv_G_cml,deriv_E_cml,deriv_GE_cml)
+    V1=fit$UML$cov[index,index]
+    V0=fit$CML$cov[index,index]
+    var1=t(B1)%*%V1%*%B1
+    var0=t(B0)%*%V0%*%B0
+    reri_eb=(reri_uml-reri_cml)^2/((reri_uml-reri_cml)^2+var1)*reri_uml+var1/((reri_uml-reri_cml)^2+var1)*reri_cml
+    R1=reri_uml;R0=reri_cml
+    deriv_uml=(3*R1^2-4*R0*R1+R0^2)/(var1+(R1-R0)^2)-(2*var1*R0*(R1-R0)+2*R1*(R1-R0)^3)/(var1+(R1-R0)^2)^2
+    deriv_cml=(var1^2-var1*(R1-R0)^2)/(var1+(R1-R0)^2)^2
+    A=c(deriv_uml,deriv_cml)
+    sigma=fit$EB$UML.CML.cov[index,index]
+    var=t(A)%*%matrix(c(var1,t(B1)%*%sigma%*%B0,t(B1)%*%sigma%*%B0,var0),nrow=2,ncol=2)%*%A
+    EB=c(reri_eb,reri_eb-1.96*sqrt(var),reri_eb+1.96*sqrt(var),2*(1-pnorm(abs(reri_eb/sqrt(var)))))
+    UML=c(reri_uml,reri_uml-1.96*sqrt(var1),reri_uml+1.96*sqrt(var1),2*(1-pnorm(abs(reri_uml/sqrt(var1)))))
+    CML=c(reri_cml,reri_cml-1.96*sqrt(var0),reri_cml+1.96*sqrt(var0),2*(1-pnorm(abs(reri_cml/sqrt(var0)))))
+    names(EB)=c("stat","lower","upper","p-value")
+    names(UML)=c("stat","lower","upper","p-value")
+    names(CML)=c("stat","lower","upper","p-value")
+    result=list(UML,CML,EB)
+    names(result)=c("UML","CML","EB")
+  }
+  if(is.null(G0)|is.null(G1)|is.null(E0)|is.null(E1)){
+    result="Please specify G0,G1,E0,E1"
+  }
+  return(result)
 }
-
-
