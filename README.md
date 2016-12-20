@@ -3,6 +3,7 @@ UML, CML and EB Wald Tests of G-E Interaction in Multiplicative and Additive Sca
 We provide an R function which returns point estimates, 95% CIs and p-values for UML,CML and EB estimator of relative excess of risk due tointeraction (RERI). You can simply call GE.wald.test(G0,G1,E0,E1,data,response.var,snp.var,main.vars,int.vars,strata.var,modelnum) to obtain those estimates. The function requires loading package "CGEN". The input is as same as "snp.logistic" in CGEN package but additionally needs G0,G1,E0,E1, which means the relative excess risk due to interaction when environmental risk factor changes from E0 to E1 and genetic risk factor changes from G0 to G1 but other covariates are held constant. Only one genetic risk factor is allowed and it must be binary or trinary. There can be multiple environmental risk factors to interact with G and any type of E, namely, binary, categorical and continuous can be handled in this function. Because we take advantage of snp.logistic() in the function, it may be convenient to return the summary result in multiplicative scale togenther with the result in additive scale, so that you don't have to run it twice.
 
 For the input of snp.logistic, the arguments are copied here:
+
 data: Data frame containing all the data. No default.
 
 response.var: Name of the binary response variable coded as 0 (controls) and 1 (cases). No default.
