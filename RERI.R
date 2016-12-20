@@ -1,5 +1,5 @@
 library(CGEN)
-RERI.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.vars=NULL,strata.var=NULL){
+RERI.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.vars=NULL,strata.var=NULL,modelnum){
   elevel=c()
   for(i in 1:length(int.vars)){
     if(is.factor(data[,int.vars[i]])){
@@ -27,7 +27,7 @@ RERI.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.vars
       inter_name=c(inter_name,paste0(main_g_name[i],":",main_e_name[j]))
     }
   }
-  fit=snp.logistic(data,response.var,snp.var,main.vars,int.vars,strata.var,op=list(genetic.model=3*glevel-6))
+  fit=snp.logistic(data,response.var,snp.var,main.vars,int.vars,strata.var,op=list(genetic.model=modelnum))
   index=match(c(main_g_name,main_e_name,inter_name),names(fit$UML$parms))
   beta_uml=fit$UML$parms[index]
   beta_cml=fit$CML$parms[index]
