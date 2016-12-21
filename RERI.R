@@ -78,7 +78,7 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
       G0_E1=E1_new*(G0_new!=0)
       G0_E0=E0_new*(G0_new!=0)
     }
-    if(modelnum==2){ ##dominant AA v.s. Aa+aa ##
+    if(modelnum==2){ ##recessive AA+Aa v.s. aa ##
       G0_new=max(G0,1)-1
       G1_new=max(G1,1)-1
       G1_E1=E1_new*(G1_new!=0)
@@ -86,7 +86,7 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
       G0_E1=E1_new*(G0_new!=0)
       G0_E0=E0_new*(G0_new!=0)
     }
-    if(G0_new!=G1_new & E1_new!=E0_new){
+    if(sum((G0_new-G1_new)^2)>0 & sum((E1_new-E0_new)^2)>0){
       reri_uml=exp(beta_uml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_uml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0))-exp(beta_uml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0))+1
       reri_cml=exp(beta_cml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_cml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0))-exp(beta_cml%*%c(G0_new-G0_new,E1_new-E0_new,G0_E1-G0_E0))+1
       deriv_G_uml=(exp(beta_uml%*%c(G1_new-G0_new,E1_new-E0_new,G1_E1-G0_E0))-exp(beta_uml%*%c(G1_new-G0_new,E0_new-E0_new,G1_E0-G0_E0)))*(G1_new-G0_new)
@@ -119,16 +119,14 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
       result=list(add,summary(fit))
       names(result)=c("add","mult")
     }
-    if(G0_new==G1_new|E1_new==E0_new){
-      warn="Please make sure there are changes in both G and E. Be careful that if you choose a dominant genetic model,then G=1 and G=2 are equivalent; if you choose a recessive model, then G=0 and G=1 are equivalent. Only multiplicative interactions are displayed below."
-      result=list(warn,summary(fit))
-      names(result)=c("warning","mult")
+    if(sum((G0_new-G1_new)^2)==0|sum((E1_new-E0_new)^2)==0){
+      print("Please make sure there are changes in both G and E. Be careful that if you choose a dominant genetic model,then G=1 and G=2 are equivalent; if you choose a recessive model, then G=0 and G=1 are equivalent. Only multiplicative interactions are displayed below.")
+      result=summary(fit)
     }
   }
   if(is.null(G0)|is.null(G1)|is.null(E0)|is.null(E1)){
-    warn="Please specify G0,G1,E0,E1, otherwise only multiplicative interactions will be displayed"
-    result=list(warn,summary(fit))
-    names(result)=c("warning","mult")
+    print("Please specify G0,G1,E0,E1, otherwise only multiplicative interactions will be displayed")
+    result=summary(fit)
   }
   return(result)
 }
