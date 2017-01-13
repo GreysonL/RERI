@@ -1,5 +1,6 @@
 library(CGEN)
 GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.vars=NULL,strata.var=NULL,modelnum){
+  fit=snp.logistic(data,response.var,snp.var,main.vars,int.vars,strata.var,op=list(genetic.model=modelnum))
   elevel=c()
   for(i in 1:length(int.vars)){
     if(is.factor(data[,int.vars[i]])){
@@ -13,7 +14,8 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
   if(modelnum==1|modelnum==2){glevel=2}
   main_e_name=c()
   for(i in 1:length(int.vars)){
-    if(elevel[i]<=2){main_e_name=c(main_e_name,int.vars[i])}
+    if(elevel[i]<=2 & is.na(match(int.vars[i],names(fit$UML$parms)))==F){main_e_name=c(main_e_name,int.vars[i])}
+    if(elevel[i]<=2 & is.na(match(int.vars[i],names(fit$UML$parms)))==T){main_e_name=c(main_e_name,paste0(int.vars[i],"_1"))}
     if(elevel[i]>2){
       for(j in 1:(elevel[i]-1)){
         main_e_name=c(main_e_name,paste0(int.vars[i],"_",j))
@@ -29,7 +31,6 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
       inter_name=c(inter_name,paste0(main_g_name[i],":",main_e_name[j]))
     }
   }
-  fit=snp.logistic(data,response.var,snp.var,main.vars,int.vars,strata.var,op=list(genetic.model=modelnum))
   index=match(c(main_g_name,main_e_name,inter_name),names(fit$UML$parms))
   beta_uml=fit$UML$parms[index]
   beta_cml=fit$CML$parms[index]
@@ -78,7 +79,7 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
       G0_E1=E1_new*(G0_new!=0)
       G0_E0=E0_new*(G0_new!=0)
     }
-    if(modelnum==2){ ##recessive AA+Aa v.s. aa ##
+    if(modelnum==2){ ##dominant AA v.s. Aa+aa ##
       G0_new=max(G0,1)-1
       G1_new=max(G1,1)-1
       G1_E1=E1_new*(G1_new!=0)
@@ -120,13 +121,15 @@ GE.wald.test=function(G0,G1,E0,E1,data,response.var,snp.var,main.vars=NULL,int.v
       names(result)=c("add","mult")
     }
     if(sum((G0_new-G1_new)^2)==0|sum((E1_new-E0_new)^2)==0){
-      print("Please make sure there are changes in both G and E. Be careful that if you choose a dominant genetic model,then G=1 and G=2 are equivalent; if you choose a recessive model, then G=0 and G=1 are equivalent. Only multiplicative interactions are displayed below.")
-      result=summary(fit)
+      warn="Please make sure there are changes in both G and E. Be careful that if you choose a dominant genetic model,then G=1 and G=2 are equivalent; if you choose a recessive model, then G=0 and G=1 are equivalent. Only multiplicative interactions are displayed below."
+      result=list(warn,summary(fit))
+      names(result)=c("warning","mult")
     }
   }
   if(is.null(G0)|is.null(G1)|is.null(E0)|is.null(E1)){
-    print("Please specify G0,G1,E0,E1, otherwise only multiplicative interactions will be displayed")
-    result=summary(fit)
+    warn="Please specify G0,G1,E0,E1, otherwise only multiplicative interactions will be displayed"
+    result=list(warn,summary(fit))
+    names(result)=c("warning","mult")
   }
   return(result)
 }
